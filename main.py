@@ -1,162 +1,139 @@
 import tkinter as tk
-from tkinter import messagebox, PhotoImage
-import pickle
+from tkinter import messagebox
 from PIL import Image, ImageTk
+import pickle
 import itertools
 
-# Initialize the main window
+# Initialize window
 root = tk.Tk()
-root.title("To-Do List App")
+root.title("To-Do List")
 root.geometry("800x800")
 root.config(bg="black")
 
-# Global list to store tasks
 tasks = []
 
-# Save and Load functions for tasks
-def save_tasks():
-    with open("tasks.pkl", "wb") as file:
-        pickle.dump(tasks, file)
+def save():
+    with open("tasks.pkl", "wb") as f:
+        pickle.dump(tasks, f)
 
-def load_tasks():
+def load():
     global tasks
     try:
-        with open("tasks.pkl", "rb") as file:
-            tasks = pickle.load(file)
-            update_task_list()
+        with open("tasks.pkl", "rb") as f:
+            tasks = pickle.load(f)
+        refresh()
     except FileNotFoundError:
         tasks = []
 
-# Update the task list
-def update_task_list():
-    task_listbox.delete(0, tk.END)
-    for task in tasks:
-        task_listbox.insert(tk.END, task)
-        if task.startswith("✔️"):
-            task_listbox.itemconfig(tk.END, {'bg': '#1f5130', 'fg': 'white'})
-        else:
-            task_listbox.itemconfig(tk.END, {'bg': '#4A4A8A', 'fg': 'white'})
+def refresh():
+    task_box.delete(0, tk.END)
+    for t in tasks:
+        task_box.insert(tk.END, t)
+        color = '#1f5130' if t.startswith("✔️") else '#4A4A8A'
+        task_box.itemconfig(tk.END, {'bg': color, 'fg': 'white'})
 
-# Add a new task
-def add_task():
-    task = task_entry.get().strip()
+# Added the warning windows
+def add():
+    task = entry.get().strip()
     if task:
         tasks.append(task)
-        update_task_list()
-        task_entry.delete(0, tk.END)
-        save_tasks()
+        refresh()
+        entry.delete(0, tk.END)
+        save()
     else:
         messagebox.showwarning("Warning", "Task cannot be empty!")
 
-def remove_task():
+def remove():
     try:
-        selected_index = task_listbox.curselection()[0]
-        task_listbox.delete(selected_index)
-        tasks.pop(selected_index)
-        save_tasks()
+        idx = task_box.curselection()[0]
+        task_box.delete(idx)
+        tasks.pop(idx)
+        save()
     except IndexError:
         messagebox.showwarning("Warning", "Select a task to remove.")
 
-def complete_task():
+def complete():
     try:
-        selected_index = task_listbox.curselection()[0]
-        tasks[selected_index] = f"✔️ {tasks[selected_index]}"
-        update_task_list()
-        save_tasks()
+        idx = task_box.curselection()[0]
+        tasks[idx] = f"✔️ {tasks[idx]}"
+        refresh()
+        save()
     except IndexError:
-        messagebox.showwarning("Warning", "Select a task to mark as completed.")
+        messagebox.showwarning("Warning", "Select a task to complete.")
 
-def clear_all_tasks():
+def clear():
     if messagebox.askyesno("Clear All", "Are you sure you want to clear all tasks?"):
         tasks.clear()
-        update_task_list()
-        save_tasks()
+        refresh()
+        save()
 
-# Load icons
-add_icon = Image.open("adds.png").resize((32, 32), Image.LANCZOS)
-add_icon = ImageTk.PhotoImage(add_icon)
-
-remove_icon = Image.open("remove.png").resize((32, 32), Image.LANCZOS)
-remove_icon = ImageTk.PhotoImage(remove_icon)
-
-complete_icon = Image.open("done.png").resize((32, 32), Image.LANCZOS)
-complete_icon = ImageTk.PhotoImage(complete_icon)
-
-clear_icon = Image.open("clear.png").resize((32, 32), Image.LANCZOS)
-clear_icon = ImageTk.PhotoImage(clear_icon)
-
-# Create GUI components
-# Title label and images
-title_frame = tk.Frame(root, bg="black")
-title_frame.place(relx=0.5, rely=0.1, anchor='center')  # Add space from the top
-
-# Load and add Pikachu image
-pikachu_image = Image.open("char.png").resize((120, 85), Image.LANCZOS)  # Adjust size accordingly
-pikachu_image = ImageTk.PhotoImage(pikachu_image)
-pikachu_label = tk.Label(title_frame, image=pikachu_image, bg="black")
-pikachu_label.pack(side="left")
-
-# Title label with DJ lights effect
-title_label = tk.Label(title_frame, text="My To-Do List", font=("Arial", 36, "bold"), bg="black", fg="white")
-title_label.pack(side="left", padx=10)
-
-# Load and add To-Do image
-todo_image = Image.open("todo.png").resize((120, 85), Image.LANCZOS)  # Adjust size accordingly
-todo_image = ImageTk.PhotoImage(todo_image)
-todo_label = tk.Label(title_frame, image=todo_image, bg="black")
-todo_label.pack(side="right")
-
-# DJ Lights effect for title
-def dj_lights_effect():
+def animate_title():
     colors = ['#FF4500', '#FFD700', '#00BFFF', '#FF69B4', '#8A2BE2']
-    color_cycle = itertools.cycle(colors)
-    def change_color():
-        title_label.config(fg=next(color_cycle))
-        root.after(500, change_color)  # Change color every 500 ms
-    change_color()
+    cycle = itertools.cycle(colors)
 
-dj_lights_effect()  # Start DJ lights effect
+    def change():
+        title_lbl.config(fg=next(cycle))
+        root.after(500, change)
 
-# Create task entry and buttons
-task_entry = tk.Entry(root, width=40, font=("Arial", 18), bg="#4A4A8A", fg="white")
-task_entry.place(relx=0.1, rely=0.2, relwidth=0.8)
+    change()
 
-button_frame = tk.Frame(root, bg="black")
-button_frame.place(relx=0.1, rely=0.3, relwidth=0.8)
+# Loaded icons and resized them
+def load_icon(path):
+    img = Image.open(path).resize((32, 32), Image.LANCZOS)
+    return ImageTk.PhotoImage(img)
 
-# Create button frame and center it
-button_frame = tk.Frame(root, bg="black")
-button_frame.place(relx=0.5, rely=0.3, anchor='center', relwidth=0.8)
+add_img = load_icon("adds.png")
+remove_img = load_icon("remove.png")
+done_img = load_icon("done.png")
+clear_img = load_icon("clear.png")
 
-# Configure grid columns for equal weight
-for i in range(4):  # Assuming you have 4 buttons
-    button_frame.grid_columnconfigure(i, weight=1)
+# Added header with image and title
+header = tk.Frame(root, bg="black")
+header.place(relx=0.5, rely=0.1, anchor='center')
 
-add_button = tk.Button(button_frame, image=add_icon, text=" Add Task", compound="left", command=add_task, 
-                       bg="#4CAF50", fg="white", font=("Arial", 13, "bold"))
-add_button.grid(row=0, column=0, padx=5, sticky='ew')
+char_img = Image.open("char.png").resize((120, 85), Image.LANCZOS)
+char_icon = ImageTk.PhotoImage(char_img)
+char_lbl = tk.Label(header, image=char_icon, bg="black")
+char_lbl.pack(side="left")
 
-remove_button = tk.Button(button_frame, image=remove_icon, text=" Remove Task", compound="left", command=remove_task, 
-                          bg="#f44336", fg="white", font=("Arial", 13, "bold"))
-remove_button.grid(row=0, column=1, padx=5, sticky='ew')
+title_lbl = tk.Label(header, text="My To-Do List", font=("Arial", 36, "bold"), bg="black", fg="white")
+title_lbl.pack(side="left", padx=10)
 
-complete_button = tk.Button(button_frame, image=complete_icon, text=" Mark Completed", compound="left", 
-                            command=complete_task, bg="#2196F3", fg="white", font=("Arial", 13, "bold"))
-complete_button.grid(row=0, column=2, padx=5, sticky='ew')
+todo_img = Image.open("todo.png").resize((120, 85), Image.LANCZOS)
+todo_icon = ImageTk.PhotoImage(todo_img)
+todo_lbl = tk.Label(header, image=todo_icon, bg="black")
+todo_lbl.pack(side="right")
 
-clear_button = tk.Button(button_frame, image=clear_icon, text=" Clear All", compound="left", command=clear_all_tasks, 
-                         bg="#FF9800", fg="white", font=("Arial", 13, "bold"))
-clear_button.grid(row=0, column=3, padx=5, sticky='ew')
+animate_title()
 
-# Create a frame for the task listbox with a white/silver border
+entry = tk.Entry(root, width=40, font=("Arial", 18), bg="#4A4A8A", fg="white")
+entry.place(relx=0.1, rely=0.2, relwidth=0.8)
+
+btn_frame = tk.Frame(root, bg="black")
+btn_frame.place(relx=0.5, rely=0.3, anchor='center', relwidth=0.8)
+
+for i in range(4):
+    btn_frame.grid_columnconfigure(i, weight=1)
+
+tk.Button(btn_frame, image=add_img, text=" Add", compound="left", command=add, 
+          bg="#4CAF50", fg="white", font=("Arial", 13, "bold")).grid(row=0, column=0, padx=5, sticky='ew')
+
+tk.Button(btn_frame, image=remove_img, text=" Remove", compound="left", command=remove, 
+          bg="#f44336", fg="white", font=("Arial", 13, "bold")).grid(row=0, column=1, padx=5, sticky='ew')
+
+tk.Button(btn_frame, image=done_img, text=" Complete", compound="left", command=complete, 
+          bg="#2196F3", fg="white", font=("Arial", 13, "bold")).grid(row=0, column=2, padx=5, sticky='ew')
+
+tk.Button(btn_frame, image=clear_img, text=" Clear All", compound="left", command=clear, 
+          bg="#FF9800", fg="white", font=("Arial", 13, "bold")).grid(row=0, column=3, padx=5, sticky='ew')
+
 task_frame = tk.Frame(root, bg="white")
 task_frame.place(relx=0.1, rely=0.4, relwidth=0.8, relheight=0.5)
 
-task_listbox = tk.Listbox(task_frame, font=("Arial", 16), selectmode=tk.SINGLE, bg="black", fg="white")
-task_listbox.pack(expand=True, fill='both', padx=5, pady=5)  # Padding inside the box
+task_box = tk.Listbox(task_frame, font=("Arial", 16), selectmode=tk.SINGLE, bg="black", fg="white")
+task_box.pack(expand=True, fill='both', padx=5, pady=5)
 
-# Load tasks on startup
-load_tasks()
+load()
 
-# Start the GUI event loop
 root.mainloop()
+
